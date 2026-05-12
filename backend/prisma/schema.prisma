@@ -11,9 +11,9 @@ datasource db {
 }
 
 model Role {
-  id        Int     @id @default(autoincrement())
-  roleName  String  @unique @map("role_name")
-  slug      String  @unique
+  id        Int      @id @default(autoincrement())
+  roleName  String   @unique @map("role_name")
+  slug      String   @unique
   users     User[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -22,18 +22,34 @@ model Role {
 }
 
 model User {
-  id          Int     @id @default(autoincrement())
-  name        String
-  email       String  @unique
-  password    String
-  phoneNumber String? @map("phone_number")
-  roleId      Int     @map("role_id")
-  role        Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  deletedAt   DateTime? @map("deleted_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  password      String
+  phoneNumber   String?         @map("phone_number")
+  roleId        Int             @map("role_id")
+  role          Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  deletedAt     DateTime?       @map("deleted_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  SpinnerAmount SpinnerAmount[]
 
   @@index([roleId])
   @@index([email])
   @@map("users")
+}
+
+model SpinnerAmount {
+  id            Int       @id @default(autoincrement())
+  spinner_name   String?
+  spinner_amount Float?
+  created_at     DateTime? @default(now())
+  won_color      String?
+  user_id        Int?
+  updated_at     DateTime? @updatedAt
+  deleted_at     DateTime?
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("spinner_amount")
 }
