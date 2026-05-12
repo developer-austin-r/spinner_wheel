@@ -8,8 +8,16 @@ export async function seedUsers(prisma: PrismaClient) {
       where: { slug: 'user' },
     });
 
+    const superAdminRole = await prisma.role.findUnique({
+      where: { slug: 'super_admin' },
+    });
+
     if (!userRole) {
       throw new Error('User role not found. Please seed roles first.');
+    }
+
+    if (!superAdminRole) {
+      throw new Error('Super Admin role not found. Please seed roles first.');
     }
 
     // Hash the password
@@ -33,10 +41,25 @@ export async function seedUsers(prisma: PrismaClient) {
       })
     );
 
+    // Create a super admin user
+    const superAdminUser = await prisma.user.upsert({
+      where: { email: 'superadmin@gmail.com' },
+      update: {},
+      create: {
+        name: 'Super Admin',
+        email: 'superadmin@gmail.com',
+        password: hashedPassword,
+        phoneNumber: '555-0007',
+        roleId: superAdminRole.id,
+      },
+    });
+
     console.log(`✓ Created ${users.length} users with password 'Password@123'`);
     users.forEach((user) => {
       console.log(`  - ${user.email} (${user.name})`);
     });
+    console.log(`✓ Created super admin user with password 'Password@123'`);
+    console.log(`  - ${superAdminUser.email} (${superAdminUser.name})`);
   } catch (error) {
     console.error('Error seeding users:', error);
     throw error;
