@@ -2,52 +2,154 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# Gym SaaS - NestJS Backend
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+A complete backend authentication system built with NestJS, featuring JWT-based authentication, role-based access control, and Prisma ORM integration.
 
-## Description
+## Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **JWT Authentication**: Secure token-based authentication with configurable expiration
+- **Role-Based Access Control**: Admin and Super Admin roles with extensible design
+- **Password Security**: bcrypt hashing for secure password storage
+- **Database**: PostgreSQL with Prisma ORM
+- **Input Validation**: Comprehensive validation using class-validator
+- **Soft Deletes**: User soft deletion for data retention
+- **CORS Enabled**: Cross-origin request support
+- **Environment Configuration**: Secure environment-based configuration
 
-## Project setup
+## Architecture
 
+- **Auth Module**: Authentication logic, strategies, and guards
+- **User Module**: User management service
+- **Role Module**: Role management service
+- **Prisma Service**: Database abstraction layer
+
+## Project Setup
+
+### 1. Install Dependencies
 ```bash
-$ npm install
+npm install --legacy-peer-deps
 ```
 
-## Compile and run the project
+### 2. Environment Configuration
+Create a `.env` file:
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/gym_saas"
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
+JWT_EXPIRES_IN="7d"
+PORT=3000
+```
+
+### 3. Database Setup
+```bash
+# Generate Prisma client
+npm run prisma:generate
+
+# Run migrations
+npm run prisma:migrate
+
+# Seed default roles
+npm run prisma:seed
+```
+
+## Running the Application
 
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
 
-## Run tests
+## API Endpoints
+
+### Authentication
+
+- **POST** `/auth/register` - Register a new user
+- **POST** `/auth/login` - Login user
+- **GET** `/auth/profile` - Get authenticated user profile (protected)
+
+For detailed API documentation and examples, see [AUTHENTICATION.md](./AUTHENTICATION.md)
+
+## Testing
 
 ```bash
 # unit tests
+npm run test
+
+# test coverage
+npm run test:cov
+
+# e2e tests
+npm run test:e2e
+```
+
+## Code Quality
+
+```bash
+# lint and fix
+npm run lint
+
+# format code
+npm run format
+```
+
+## Database Operations
+
+```bash
+# Generate Prisma client
+npm run prisma:generate
+
+# Create and run migrations
+npm run prisma:migrate
+
+# Deploy migrations to production
+npm run prisma:migrate:prod
+
+# Run seed script
+npm run prisma:seed
+```
+
+## Project Structure
+
+```
+src/
+├── auth/              # Authentication module
+├── user/              # User management module
+├── role/              # Role management module
+├── prisma/            # Database service
+├── app.module.ts      # Main application module
+└── main.ts            # Application entry point
+```
+
+## Documentation
+
+- [Authentication Documentation](./AUTHENTICATION.md) - Detailed authentication system docs
+- [Prisma Schema](./prisma/schema.prisma) - Database schema definition
+- [NestJS Documentation](https://docs.nestjs.com) - Official NestJS docs
+- [Prisma Documentation](https://www.prisma.io/docs) - Official Prisma docs
+
+## Next Steps
+
+1. Implement additional modules (e.g., Members, Membership Plans)
+2. Add role-based access control middleware
+3. Implement refresh token functionality
+4. Add email verification
+5. Implement password reset functionality
+6. Add 2FA support
+7. Implement OAuth integration
+8. Add API rate limiting
+9. Implement comprehensive logging
+10. Add monitoring and analytics
+
+## License
+
+This project is licensed under the UNLICENSED license.
+
 $ npm run test
 
 # e2e tests
