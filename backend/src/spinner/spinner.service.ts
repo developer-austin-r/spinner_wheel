@@ -17,11 +17,9 @@ export class SpinnerService {
   }
 
   async findAll() {
-    const limit = this.configService.get<number>('SPINNER_LIMIT') || 3;
     return this.prisma.spinner.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
-      take: Number(limit),
     });
   }
 }

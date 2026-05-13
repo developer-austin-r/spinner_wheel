@@ -22,6 +22,7 @@ export class SpinnerController {
 
   @Get()
   async findAll() {
+    console.log('GET /spinners reached');
     return this.spinnerService.findAll();
   }
 }

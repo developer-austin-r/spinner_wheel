@@ -34,12 +34,31 @@ interface SpinnerContextType {
   addBulkPurchase: (selections: BulkSelection[], userId: string, userEmail: string) => void;
   setWinner: (spinnerId: string, colorIndex: number) => void;
   resetWinner: (spinnerId: string) => void;
+  spinnerColors: any[];
+  setSelectedWinnerColor: (spinnerId: string, colorIndex: number, amount: string) => Promise<void>;
 }
 const SpinnerContext = createContext<SpinnerContextType | undefined>(undefined);
 
 export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [spinners, setSpinners] = useState<Spinner[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [spinnerColors, setSpinnerColors] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetchSpinnerColors();
+  }, []);
+
+  const fetchSpinnerColors = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/spinner-colors`);
+      if (response.ok) {
+        const data = await response.json();
+        setSpinnerColors(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch spinner colors:', error);
+    }
+  };
 
   const fetchSpinners = async () => {
     try {
@@ -121,8 +140,48 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSpinners(prev => prev.map(s => s.id === spinnerId ? { ...s, winnerColorIndex: null } : s));
   };
 
+  const setSelectedWinnerColor = async (spinnerId: string, colorIndex: number, amount: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Map color index to backend color ID
+      const colorId = spinnerColors[colorIndex]?.id;
+      if (!colorId) return;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/selected-spinner-values`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          spinnerId: parseInt(spinnerId),
+          selectedColor: colorId,
+          amount: amount.toString(),
+        }),
+      });
+
+      if (response.ok) {
+        setWinner(spinnerId, colorIndex);
+      }
+    } catch (error) {
+      console.error('Failed to set winner color in DB:', error);
+    }
+  };
+
   return (
-    <SpinnerContext.Provider value={{ spinners, purchases, fetchSpinners, updateSpinner, addSpinner, addPurchase, addBulkPurchase, setWinner, resetWinner }}>
+    <SpinnerContext.Provider value={{ 
+      spinners, 
+      purchases, 
+      fetchSpinners, 
+      updateSpinner, 
+      addSpinner, 
+      addPurchase, 
+      addBulkPurchase, 
+      setWinner, 
+      resetWinner,
+      spinnerColors,
+      setSelectedWinnerColor
+    }}>
       {children}
     </SpinnerContext.Provider>
   );
