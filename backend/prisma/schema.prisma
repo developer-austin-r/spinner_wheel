@@ -53,3 +53,13 @@ model SpinnerAmount {
 
   @@map("spinner_amount")
 }
+
+model SpinnerColor {
+  id        Int      @id @default(autoincrement())
+  colorName String   @map("color_name")
+  colorSlug String   @unique @map("color_slug")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("spinner_colors")
+}
