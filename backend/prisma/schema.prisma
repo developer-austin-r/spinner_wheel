@@ -34,6 +34,7 @@ model User {
   updatedAt     DateTime        @updatedAt @map("updated_at")
   SpinnerAmount SpinnerAmount[]
   Spinner       Spinner[]
+  SelectedSpinnerValue SelectedSpinnerValue[]
 
   @@index([roleId])
   @@index([email])
@@ -61,6 +62,7 @@ model SpinnerColor {
   colorSlug String   @unique @map("color_slug")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  SelectedSpinnerValue SelectedSpinnerValue[]
 
   @@map("spinner_colors")
 }
@@ -77,6 +79,24 @@ model Spinner {
   deletedAt    DateTime? @map("deleted_at")
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  SelectedSpinnerValue SelectedSpinnerValue[]
 
   @@map("spinners")
+}
+
+model SelectedSpinnerValue {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @map("user_id")
+  selectedColor Int           @map("selected_color")
+  amount        String        @db.VarChar(255)
+  spinnerId     Int           @map("spinner_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  color   SpinnerColor @relation(fields: [selectedColor], references: [id], onDelete: Cascade)
+  spinner Spinner      @relation(fields: [spinnerId], references: [id], onDelete: Cascade)
+
+  @@map("selected_spinner_values")
 }
