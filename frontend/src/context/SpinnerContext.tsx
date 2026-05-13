@@ -27,45 +27,58 @@ interface BulkSelection {
 interface SpinnerContextType {
   spinners: Spinner[];
   purchases: Purchase[];
+  fetchSpinners: () => Promise<void>;
   updateSpinner: (id: string, updates: Partial<Spinner>) => void;
+  addSpinner: (spinnerData: { spinnerName: string; baseAmount: number; setAmount: number }) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, 'id' | 'timestamp'>) => void;
   addBulkPurchase: (selections: BulkSelection[], userId: string, userEmail: string) => void;
   setWinner: (spinnerId: string, colorIndex: number) => void;
   resetWinner: (spinnerId: string) => void;
 }
-
 const SpinnerContext = createContext<SpinnerContextType | undefined>(undefined);
 
-const INITIAL_SPINNERS: Spinner[] = [
-  {
-    id: '1',
-    title: 'Classic Wheel',
-    amount: 100,
-    enabled: true,
-    colors: ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE'],
-    winnerColorIndex: null,
-  },
-  {
-    id: '2',
-    title: 'Bonus Wheel',
-    amount: 200,
-    enabled: true,
-    colors: ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE'],
-    winnerColorIndex: null,
-  },
-  {
-    id: '3',
-    title: 'Mega Jackpot',
-    amount: 500,
-    enabled: true,
-    colors: ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE'],
-    winnerColorIndex: null,
-  },
-];
-
 export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [spinners, setSpinners] = useState<Spinner[]>(INITIAL_SPINNERS);
+  const [spinners, setSpinners] = useState<Spinner[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+
+  const fetchSpinners = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/spinners`);
+      if (response.ok) {
+        const data = await response.json();
+        const mappedSpinners = data.map((s: any) => ({
+          id: s.id.toString(),
+          title: s.spinnerName,
+          amount: s.setAmount,
+          enabled: s.activeStatus,
+          colors: ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE'],
+          winnerColorIndex: null,
+        }));
+        setSpinners(mappedSpinners);
+      }
+    } catch (error) {
+      console.error('Failed to fetch spinners:', error);
+    }
+  };
+
+  const addSpinner = async (spinnerData: { spinnerName: string; baseAmount: number; setAmount: number }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/spinners`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(spinnerData),
+      });
+      if (response.ok) {
+        await fetchSpinners();
+      }
+    } catch (error) {
+      console.error('Failed to add spinner:', error);
+    }
+  };
 
   const updateSpinner = (id: string, updates: Partial<Spinner>) => {
     setSpinners(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
@@ -109,7 +122,7 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   return (
-    <SpinnerContext.Provider value={{ spinners, purchases, updateSpinner, addPurchase, addBulkPurchase, setWinner, resetWinner }}>
+    <SpinnerContext.Provider value={{ spinners, purchases, fetchSpinners, updateSpinner, addSpinner, addPurchase, addBulkPurchase, setWinner, resetWinner }}>
       {children}
     </SpinnerContext.Provider>
   );

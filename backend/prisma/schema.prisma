@@ -33,6 +33,7 @@ model User {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
   SpinnerAmount SpinnerAmount[]
+  Spinner       Spinner[]
 
   @@index([roleId])
   @@index([email])
@@ -62,4 +63,20 @@ model SpinnerColor {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("spinner_colors")
+}
+
+model Spinner {
+  id           Int       @id @default(autoincrement())
+  spinnerName  String    @map("spinner_name")
+  baseAmount   Float     @map("base_amount")
+  setAmount    Float     @map("set_amount")
+  userId       Int?      @map("user_id")
+  activeStatus Boolean   @default(true) @map("active_status")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("spinners")
 }

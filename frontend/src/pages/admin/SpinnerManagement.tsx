@@ -10,8 +10,19 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { Navbar } from '../../components/layout/Navbar';
 import { Button } from '../../components/ui/Button';
 
+
 export const SpinnerManagement: React.FC = () => {
-  const { spinners, updateSpinner, setWinner, resetWinner } = useSpinners();
+  const { spinners, updateSpinner, setWinner, resetWinner, fetchSpinners, addSpinner } = useSpinners();
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [newSpinner, setNewSpinner] = React.useState({
+    spinnerName: '',
+    baseAmount: 0,
+    setAmount: 0,
+  });
+
+  React.useEffect(() => {
+    fetchSpinners();
+  }, []);
 
   const handleToggle = (id: string, enabled: boolean) => {
     updateSpinner(id, { enabled: !enabled });
@@ -37,10 +48,59 @@ export const SpinnerManagement: React.FC = () => {
               <h2 className="text-3xl font-bold text-white tracking-tight">Spinner Management</h2>
               <p className="text-gray-500 mt-1">Configure wheel settings, amounts, and winners.</p>
             </div>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => setIsModalOpen(true)}>
               <Plus className="w-4 h-4" /> Add New Spinner
             </Button>
           </div>
+
+          {/* Modal */}
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="bg-gray-900 border border-white/10 rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-300">
+                <h3 className="text-2xl font-bold text-white mb-6">Create New Spinner</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Spinner Name</label>
+                    <input 
+                      type="text" 
+                      value={newSpinner.spinnerName}
+                      onChange={(e) => setNewSpinner({...newSpinner, spinnerName: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
+                      placeholder="e.g. Mega Wheel"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Base Amount</label>
+                      <input 
+                        type="number" 
+                        value={newSpinner.baseAmount}
+                        onChange={(e) => setNewSpinner({...newSpinner, baseAmount: Number(e.target.value)})}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Set Amount</label>
+                      <input 
+                        type="number" 
+                        value={newSpinner.setAmount}
+                        onChange={(e) => setNewSpinner({...newSpinner, setAmount: Number(e.target.value)})}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-4 mt-8">
+                    <Button variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                    <Button className="flex-1" onClick={async () => {
+                      await addSpinner(newSpinner);
+                      setIsModalOpen(false);
+                      setNewSpinner({ spinnerName: '', baseAmount: 0, setAmount: 0 });
+                    }}>Save Spinner</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-6">
             {spinners.map((spinner) => (
