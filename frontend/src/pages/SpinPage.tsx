@@ -4,12 +4,14 @@ import { ArrowLeft, ShoppingCart, Info, CreditCard, CheckCircle, Sparkles, X } f
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { useSpinners } from '../context/SpinnerContext';
+import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
 const SpinPage: React.FC = () => {
   const navigate = useNavigate();
-  const { spinners, addBulkPurchase } = useSpinners();
+  const { spinners, addPurchase } = useSpinners();
+  const { logout } = useAuth();
   
   // Multi-select: each spinner has an array of selected color indices
   const [selections, setSelections] = useState<Record<string, number[]>>({});
@@ -111,7 +113,7 @@ const SpinPage: React.FC = () => {
           <div className="animate-in fade-in slide-in-from-left-4 duration-700">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/')}
+              onClick={() => { logout(); navigate('/'); }}
               className="mb-4 -ml-2 text-gray-500 hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Logout
