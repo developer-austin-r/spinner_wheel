@@ -4,12 +4,14 @@ import { ArrowLeft, ShoppingCart, Info, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { useSpinners } from '../context/SpinnerContext';
+import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WinnerModal } from '../components/WinnerModal';
 
 const SpinPage: React.FC = () => {
   const navigate = useNavigate();
   const { spinners, addPurchase } = useSpinners();
+  const { logout } = useAuth();
   
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [purchasePending, setPurchasePending] = useState<string | null>(null);
@@ -63,7 +65,7 @@ const SpinPage: React.FC = () => {
           <div className="animate-in fade-in slide-in-from-left-4 duration-700">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/')}
+              onClick={() => { logout(); navigate('/'); }}
               className="mb-4 -ml-2 text-gray-500 hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Logout

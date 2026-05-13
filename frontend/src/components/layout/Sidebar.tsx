@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { 
   LayoutDashboard, 
   Users, 
@@ -21,6 +22,14 @@ const NAV_ITEMS = [
 ];
 
 export const Sidebar: React.FC = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 border-r border-white/5 flex flex-col z-50">
       <div className="p-6 flex items-center gap-3">
@@ -56,7 +65,7 @@ export const Sidebar: React.FC = () => {
 
       <div className="p-4 mt-auto">
         <button 
-          onClick={() => window.location.href = '/'}
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all font-medium"
         >
           <LogOut className="w-5 h-5" />
