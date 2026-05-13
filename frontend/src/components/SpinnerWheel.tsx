@@ -11,7 +11,8 @@ interface SpinnerWheelProps {
   size?: number;
   colors: string[];
   winnerIndex?: number | null;
-  onSelect?: (index: number) => void;
+  selectedIndices?: number[];
+  onToggleSelect?: (index: number) => void;
   onSpinEnd?: (index: number) => void;
   disabled?: boolean;
 }
@@ -20,13 +21,13 @@ export const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
   size = 320, 
   colors, 
   winnerIndex = null,
-  onSelect,
+  selectedIndices = [],
+  onToggleSelect,
   onSpinEnd,
   disabled = false
 }) => {
   const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
 
   const segmentAngle = 360 / colors.length;
@@ -53,15 +54,28 @@ export const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
 
   const handleSectionClick = (index: number) => {
     if (isSpinning || disabled) return;
-    setSelectedIndex(index);
-    onSelect?.(index);
+    onToggleSelect?.(index);
   };
 
   const renderSegments = () => {
     return colors.map((color, i) => {
       const startAngle = i * segmentAngle;
-      const isSelected = selectedIndex === i;
+      const isSelected = selectedIndices.includes(i);
       const isWinner = winnerIndex === i;
+
+      // Calculate positions radially to ensure consistency across all segments
+      const labelAngle = (startAngle + segmentAngle / 2 - 90) * Math.PI / 180;
+      
+      // Move labels further out to avoid the center circle (which is ~30% radius)
+      // and ensure they stay within the wider part of the triangle to avoid clipping
+      const labelRadius = 45; // 45% from center
+      const labelX = 50 + labelRadius * Math.cos(labelAngle);
+      const labelY = 50 + labelRadius * Math.sin(labelAngle);
+
+      // Checkmark slightly further out than the number
+      const checkRadius = 68; // 68% from center
+      const checkX = 50 + checkRadius * Math.cos(labelAngle);
+      const checkY = 50 + checkRadius * Math.sin(labelAngle);
 
       return (
         <div 
@@ -69,21 +83,50 @@ export const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
           onClick={() => handleSectionClick(i)}
           className={cn(
             "absolute inset-0 origin-center cursor-pointer transition-all duration-300",
-            isSelected && "z-10 scale-[1.02] drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]",
+            isSelected && "z-10 scale-[1.02]",
             isWinner && !isSpinning && "z-20 animate-pulse"
           )}
           style={{
             clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos((startAngle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((startAngle - 90) * Math.PI / 180)}%, ${50 + 50 * Math.cos((startAngle + segmentAngle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((startAngle + segmentAngle - 90) * Math.PI / 180)}%)`,
             backgroundColor: color,
-            border: isSelected ? '2px solid white' : 'none'
+            filter: isSelected ? 'brightness(1.2) saturate(1.2)' : 'brightness(1)',
+            boxShadow: isSelected ? `inset 0 0 40px rgba(255,255,255,0.3)` : 'none',
           }}
         >
+          {/* Segment number label */}
           <div 
-            className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-bold pointer-events-none"
-            style={{ transform: `rotate(${(i * segmentAngle) + segmentAngle / 2}deg)` }}
+            className="absolute text-white font-black pointer-events-none text-sm drop-shadow-md"
+            style={{ 
+              left: `${labelX}%`, 
+              top: `${labelY}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
           >
             {i + 1}
           </div>
+
+          {/* Selected checkmark overlay */}
+          <AnimatePresence>
+            {isSelected && (
+              <motion.div 
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute pointer-events-none z-30"
+                style={{
+                  left: `${checkX}%`, 
+                  top: `${checkY}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <div className="w-6 h-6 rounded-full bg-white shadow-[0_0_15px_rgba(0,0,0,0.3)] flex items-center justify-center border-2 border-green-500">
+                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       );
     });
@@ -138,18 +181,24 @@ export const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
         </div>
       </div>
       
-      {selectedIndex !== null && (
+      {/* Selected colors count badge */}
+      {selectedIndices.length > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 bg-white/5 backdrop-blur-md px-4 py-2 rounded-full border border-white/10"
+          className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-4 py-2 rounded-full border border-white/10"
         >
           <div className="text-xs font-medium text-gray-400 uppercase tracking-widest">Selected</div>
-          <div 
-            className="w-4 h-4 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" 
-            style={{ backgroundColor: colors[selectedIndex] }} 
-          />
-          <div className="text-sm font-bold text-white">Color {selectedIndex + 1}</div>
+          <div className="flex gap-1">
+            {selectedIndices.map(idx => (
+              <div 
+                key={idx}
+                className="w-4 h-4 rounded-full shadow-[0_0_6px_rgba(0,0,0,0.5)] border border-white/30" 
+                style={{ backgroundColor: colors[idx] }} 
+              />
+            ))}
+          </div>
+          <div className="text-sm font-bold text-white">{selectedIndices.length} color{selectedIndices.length > 1 ? 's' : ''}</div>
         </motion.div>
       )}
     </div>
