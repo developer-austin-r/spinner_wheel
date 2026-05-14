@@ -10,7 +10,7 @@ import confetti from 'canvas-confetti';
 
 const SpinPage: React.FC = () => {
   const navigate = useNavigate();
-  const { spinners, addPurchase } = useSpinners();
+  const { spinners, addBulkPurchase } = useSpinners();
   const { logout } = useAuth();
   
   // Multi-select: each spinner has an array of selected color indices
@@ -55,14 +55,14 @@ const SpinPage: React.FC = () => {
     setShowPayConfirm(true);
   };
 
-  const confirmPayment = () => {
+  const confirmPayment = async () => {
     // Build bulk selections
     const bulkSelections = Object.entries(selections).map(([spinnerId, colorIndices]) => ({
       spinnerId,
       colorIndices,
     }));
 
-    addBulkPurchase(bulkSelections, 'user_123', 'user@example.com');
+    await addBulkPurchase(bulkSelections);
     
     setShowPayConfirm(false);
     setHasPaid(true);

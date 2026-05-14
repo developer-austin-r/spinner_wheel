@@ -15,7 +15,7 @@ import { clsx } from 'clsx';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin-dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
+  { icon: Users, label: 'Purchase Analytics', path: '/admin/users' },
   { icon: Settings, label: 'Spinners', path: '/admin/spinners' },
   { icon: Trophy, label: 'Winners', path: '/admin/winners' },
   { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface Spinner {
   id: string;
@@ -28,15 +28,17 @@ interface SpinnerContextType {
   spinners: Spinner[];
   purchases: Purchase[];
   fetchSpinners: () => Promise<void>;
-  updateSpinner: (id: string, updates: Partial<Spinner>) => void;
+  fetchPurchases: () => Promise<void>;
+  updateSpinner: (id: string, updates: Partial<Spinner>) => Promise<void>;
   addSpinner: (spinnerData: { spinnerName: string; baseAmount: number; setAmount: number }) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, 'id' | 'timestamp'>) => void;
-  addBulkPurchase: (selections: BulkSelection[], userId: string, userEmail: string) => void;
+  addBulkPurchase: (selections: BulkSelection[]) => Promise<void>;
   setWinner: (spinnerId: string, colorIndex: number) => void;
   resetWinner: (spinnerId: string) => void;
   spinnerColors: any[];
   setSelectedWinnerColor: (spinnerId: string, colorIndex: number, amount: string) => Promise<void>;
 }
+
 const SpinnerContext = createContext<SpinnerContextType | undefined>(undefined);
 
 export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -44,7 +46,7 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [spinnerColors, setSpinnerColors] = useState<any[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchSpinnerColors();
   }, []);
 
@@ -65,18 +67,53 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const response = await fetch(`${import.meta.env.VITE_API_URL}/spinners`);
       if (response.ok) {
         const data = await response.json();
-        const mappedSpinners = data.map((s: any) => ({
-          id: s.id.toString(),
-          title: s.spinnerName,
-          amount: s.setAmount,
-          enabled: s.activeStatus,
-          colors: ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE'],
-          winnerColorIndex: null,
-        }));
+        const mappedSpinners = data.map((s: any) => {
+          const latestSelection = s.SelectedSpinnerValue?.[0];
+          let winnerIndex = null;
+          if (latestSelection) {
+            const colorSlugs = ['red', 'orange', 'yellow', 'green', 'light-blue', 'blue', 'indigo', 'pink', 'purple'];
+            winnerIndex = colorSlugs.indexOf(latestSelection.color.colorSlug);
+            if (winnerIndex === -1) winnerIndex = null;
+          }
+
+          return {
+            id: s.id.toString(),
+            title: s.spinnerName,
+            amount: s.setAmount,
+            enabled: s.activeStatus,
+            colors: ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE'],
+            winnerColorIndex: winnerIndex,
+          };
+        });
         setSpinners(mappedSpinners);
       }
     } catch (error) {
       console.error('Failed to fetch spinners:', error);
+    }
+  };
+
+  const fetchPurchases = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/selected-spinner-values`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const colorSlugs = ['red', 'orange', 'yellow', 'green', 'light-blue', 'blue', 'indigo', 'pink', 'purple'];
+        const mappedPurchases = data.map((p: any) => ({
+          id: p.id.toString(),
+          userId: p.userId.toString(),
+          userEmail: p.user.email,
+          spinnerId: p.spinnerId.toString(),
+          amount: parseFloat(p.amount),
+          selectedColorIndex: colorSlugs.indexOf(p.color.colorSlug),
+          timestamp: new Date(p.createdAt),
+        }));
+        setPurchases(mappedPurchases);
+      }
+    } catch (error) {
+      console.error('Failed to fetch purchases:', error);
     }
   };
 
@@ -99,37 +136,70 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const updateSpinner = (id: string, updates: Partial<Spinner>) => {
-    setSpinners(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  const updateSpinner = async (id: string, updates: Partial<Spinner>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const backendUpdates: any = {};
+      if (updates.title !== undefined) backendUpdates.spinnerName = updates.title;
+      if (updates.amount !== undefined) backendUpdates.setAmount = updates.amount;
+      if (updates.enabled !== undefined) backendUpdates.activeStatus = updates.enabled;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/spinners/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(backendUpdates),
+      });
+
+      if (response.ok) {
+        setSpinners(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+      }
+    } catch (error) {
+      console.error('Failed to update spinner:', error);
+    }
   };
 
   const addPurchase = (purchase: Omit<Purchase, 'id' | 'timestamp'>) => {
-    const newPurchase: Purchase = {
-      ...purchase,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date(),
-    };
-    setPurchases(prev => [newPurchase, ...prev]);
+    // Local fallback if needed, but we mostly use backend now
   };
 
-  const addBulkPurchase = (selections: BulkSelection[], userId: string, userEmail: string) => {
-    const newPurchases: Purchase[] = [];
-    for (const sel of selections) {
-      const spinner = spinners.find(s => s.id === sel.spinnerId);
-      if (!spinner) continue;
-      for (const colorIdx of sel.colorIndices) {
-        newPurchases.push({
-          id: Math.random().toString(36).substr(2, 9),
-          userId,
-          userEmail,
-          spinnerId: sel.spinnerId,
-          amount: spinner.amount,
-          selectedColorIndex: colorIdx,
-          timestamp: new Date(),
-        });
+  const addBulkPurchase = async (selections: BulkSelection[]) => {
+    try {
+      const token = localStorage.getItem('token');
+      const backendSelections: any[] = [];
+      
+      for (const sel of selections) {
+        const spinner = spinners.find(s => s.id === sel.spinnerId);
+        if (!spinner) continue;
+        for (const colorIdx of sel.colorIndices) {
+          const colorId = spinnerColors[colorIdx]?.id;
+          if (!colorId) continue;
+
+          backendSelections.push({
+            spinnerId: parseInt(sel.spinnerId),
+            selectedColor: colorId,
+            amount: spinner.amount.toString(),
+          });
+        }
       }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/selected-spinner-values/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ selections: backendSelections }),
+      });
+
+      if (response.ok) {
+        await fetchPurchases();
+      }
+    } catch (error) {
+      console.error('Failed to add bulk purchase:', error);
     }
-    setPurchases(prev => [...newPurchases, ...prev]);
   };
 
   const setWinner = (spinnerId: string, colorIndex: number) => {
@@ -143,7 +213,6 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const setSelectedWinnerColor = async (spinnerId: string, colorIndex: number, amount: string) => {
     try {
       const token = localStorage.getItem('token');
-      // Map color index to backend color ID
       const colorId = spinnerColors[colorIndex]?.id;
       if (!colorId) return;
 
@@ -173,6 +242,7 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       spinners, 
       purchases, 
       fetchSpinners, 
+      fetchPurchases,
       updateSpinner, 
       addSpinner, 
       addPurchase, 
@@ -192,4 +262,3 @@ export const useSpinners = () => {
   if (!context) throw new Error('useSpinners must be used within a SpinnerProvider');
   return context;
 };
-

@@ -10,7 +10,12 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { Navbar } from '../../components/layout/Navbar';
 
 export const UserManagement: React.FC = () => {
-  const { purchases, spinners } = useSpinners();
+  const { purchases, spinners, fetchSpinners, fetchPurchases } = useSpinners();
+
+  React.useEffect(() => {
+    fetchSpinners();
+    fetchPurchases();
+  }, []);
 
   // Helper to get stats for a specific spinner
   const getSpinnerStats = (spinnerId: string) => {
@@ -47,7 +52,7 @@ export const UserManagement: React.FC = () => {
         <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex justify-between items-end">
             <div>
-              <h2 className="text-3xl font-bold text-white tracking-tight">User Analytics</h2>
+              <h2 className="text-3xl font-bold text-white tracking-tight">Spin Purchase Analytics</h2>
               <p className="text-gray-500 mt-1">Detailed breakdown of spinner purchases and user selections.</p>
             </div>
             <div className="flex gap-3">
@@ -140,45 +145,77 @@ export const UserManagement: React.FC = () => {
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-white/5">
-                      {purchases.map((p) => {
-                        const spinner = spinners.find(s => s.id === p.spinnerId);
-                        return (
-                          <tr key={p.id} className="hover:bg-white/5 transition-colors group">
-                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                   <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-                                      {p.userEmail[0].toUpperCase()}
-                                   </div>
-                                   <div>
-                                      <p className="text-sm font-bold text-white">{p.userEmail}</p>
-                                      <p className="text-[10px] text-gray-500">ID: {p.userId}</p>
-                                   </div>
-                                </div>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className="text-sm text-gray-400">{spinner?.title || 'Unknown'}</span>
-                             </td>
-                             <td className="px-6 py-4">
-                                <span className="text-sm font-bold text-white">₹{p.amount}</span>
-                             </td>
-                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                   <div 
-                                      className="w-3 h-3 rounded-full border border-white/10" 
-                                      style={{ backgroundColor: spinner?.colors[p.selectedColorIndex] }} 
-                                   />
-                                   <span className="text-xs text-gray-400">Section {p.selectedColorIndex + 1}</span>
-                                </div>
-                             </td>
-                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-2 text-gray-500">
-                                   <Calendar className="w-3.5 h-3.5" />
-                                   <span className="text-xs">{new Date(p.timestamp).toLocaleString()}</span>
-                                </div>
-                             </td>
-                          </tr>
-                        );
-                      })}
+                      {(() => {
+                        const grouped = purchases.reduce((acc: any[], current) => {
+                          // Find an existing group with same user, spinner, and very close timestamp (within 1 minute)
+                          const existing = acc.find(item => 
+                            item.userId === current.userId && 
+                            item.spinnerId === current.spinnerId &&
+                            Math.abs(new Date(item.timestamp).getTime() - new Date(current.timestamp).getTime()) < 60000
+                          );
+
+                          if (existing) {
+                            existing.colorIndices.push(current.selectedColorIndex);
+                            existing.totalAmount += current.amount;
+                          } else {
+                            acc.push({
+                              ...current,
+                              colorIndices: [current.selectedColorIndex],
+                              totalAmount: current.amount
+                            });
+                          }
+                          return acc;
+                        }, []);
+
+                        return grouped.map((p) => {
+                          const spinner = spinners.find(s => s.id === p.spinnerId);
+                          return (
+                            <tr key={p.id} className="hover:bg-white/5 transition-colors group">
+                               <td className="px-6 py-4">
+                                  <div className="flex items-center gap-3">
+                                     <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                                        {p.userEmail[0].toUpperCase()}
+                                     </div>
+                                     <div>
+                                        <p className="text-sm font-bold text-white">{p.userEmail}</p>
+                                        <p className="text-[10px] text-gray-500">ID: {p.userId}</p>
+                                     </div>
+                                  </div>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <span className="text-sm text-gray-400">{spinner?.title || 'Unknown'}</span>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-white">₹{p.totalAmount}</span>
+                                    {p.colorIndices.length > 1 && (
+                                      <span className="text-[10px] text-gray-500 tracking-tight">₹{p.amount} × {p.colorIndices.length}</span>
+                                    )}
+                                  </div>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <div className="flex flex-wrap gap-2">
+                                     {p.colorIndices.map((idx: number, i: number) => (
+                                       <div key={i} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                                          <div 
+                                             className="w-2.5 h-2.5 rounded-full border border-white/10" 
+                                             style={{ backgroundColor: spinner?.colors[idx] }} 
+                                          />
+                                          <span className="text-[10px] text-gray-400">Sec {idx + 1}</span>
+                                       </div>
+                                     ))}
+                                  </div>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2 text-gray-500">
+                                     <Calendar className="w-3.5 h-3.5" />
+                                     <span className="text-xs">{new Date(p.timestamp).toLocaleString()}</span>
+                                  </div>
+                               </td>
+                            </tr>
+                          );
+                        });
+                      })()}
                       {purchases.length === 0 && (
                         <tr>
                            <td colSpan={5} className="px-6 py-12 text-center text-gray-600 italic">
