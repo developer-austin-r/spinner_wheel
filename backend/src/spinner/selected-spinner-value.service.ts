@@ -1,50 +1,59 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { SelectedSpinnerValue } from '../database/entities';
 
 @Injectable()
 export class SelectedSpinnerValueService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(SelectedSpinnerValue)
+    private readonly values: Repository<SelectedSpinnerValue>,
+  ) {}
 
   async create(data: { userId: number; selectedColor: number; amount: string; spinnerId: number }) {
-    return this.prisma.selectedSpinnerValue.create({
-      data,
-    });
+    return this.values.save(this.values.create(data));
   }
 
   async createMany(userId: number, selections: { spinnerId: number; selectedColor: number; amount: string }[]) {
-    return this.prisma.selectedSpinnerValue.createMany({
-      data: selections.map(s => ({
+    const result = await this.values.insert(selections.map(s => ({
         ...s,
         userId,
-      })),
-    });
+      })));
+    return { count: result.identifiers.length };
   }
 
   async findBySpinner(spinnerId: number) {
-    return this.prisma.selectedSpinnerValue.findMany({
+    return this.values.find({
       where: { spinnerId },
-      include: { color: true },
-      orderBy: { createdAt: 'desc' },
+      relations: { color: true },
+      order: { createdAt: 'DESC' },
     });
   }
 
   async findAll() {
-    return this.prisma.selectedSpinnerValue.findMany({
-      include: { 
-        color: true,
-        user: { select: { email: true, id: true } },
-        spinner: { select: { spinnerName: true } }
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.values.createQueryBuilder('value')
+      .leftJoinAndSelect('value.color', 'color')
+      .leftJoin('value.user', 'user')
+      .addSelect(['user.id', 'user.email'])
+      .leftJoin('value.spinner', 'spinner')
+      .addSelect(['spinner.id', 'spinner.spinnerName'])
+      .orderBy('value.createdAt', 'DESC')
+      .getMany();
   }
 
   async getStats() {
-    return this.prisma.selectedSpinnerValue.groupBy({
-      by: ['spinnerId', 'selectedColor'],
-      _count: {
-        _all: true
-      }
-    });
+    const rows = await this.values.createQueryBuilder('value')
+      .select('value.spinnerId', 'spinnerId')
+      .addSelect('value.selectedColor', 'selectedColor')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('value.spinnerId')
+      .addGroupBy('value.selectedColor')
+      .getRawMany();
+
+    return rows.map((row) => ({
+      spinnerId: Number(row.spinnerId),
+      selectedColor: Number(row.selectedColor),
+      _count: { _all: Number(row.count) },
+    }));
   }
 }

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Card, CardHeader, CardContent, CardFooter } from '../ui/Card';
+import { Card, CardContent, CardFooter } from '../ui/Card';
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();

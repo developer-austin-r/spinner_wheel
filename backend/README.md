@@ -4,14 +4,14 @@
 
 # Gym SaaS - NestJS Backend
 
-A complete backend authentication system built with NestJS, featuring JWT-based authentication, role-based access control, and Prisma ORM integration.
+A NestJS backend with JWT authentication, role-based access control, and TypeORM.
 
 ## Features
 
 - **JWT Authentication**: Secure token-based authentication with configurable expiration
 - **Role-Based Access Control**: Admin and Super Admin roles with extensible design
 - **Password Security**: bcrypt hashing for secure password storage
-- **Database**: PostgreSQL with Prisma ORM
+- **Database**: PostgreSQL with TypeORM
 - **Input Validation**: Comprehensive validation using class-validator
 - **Soft Deletes**: User soft deletion for data retention
 - **CORS Enabled**: Cross-origin request support
@@ -22,7 +22,7 @@ A complete backend authentication system built with NestJS, featuring JWT-based 
 - **Auth Module**: Authentication logic, strategies, and guards
 - **User Module**: User management service
 - **Role Module**: Role management service
-- **Prisma Service**: Database abstraction layer
+- **TypeORM Repositories**: Database access through domain repositories
 
 ## Project Setup
 
@@ -42,14 +42,11 @@ PORT=3000
 
 ### 3. Database Setup
 ```bash
-# Generate Prisma client
-npm run prisma:generate
-
 # Run migrations
-npm run prisma:migrate
+npm run migration:run
 
-# Seed default roles
-npm run prisma:seed
+# Seed roles, users, and spinner colors
+npm run seed
 ```
 
 ## Running the Application
@@ -101,17 +98,14 @@ npm run format
 ## Database Operations
 
 ```bash
-# Generate Prisma client
-npm run prisma:generate
-
 # Create and run migrations
-npm run prisma:migrate
+npm run migration:run
 
 # Deploy migrations to production
-npm run prisma:migrate:prod
+npm run migration:run:prod
 
 # Run seed script
-npm run prisma:seed
+npm run seed
 ```
 
 ## Project Structure
@@ -121,7 +115,7 @@ src/
 ├── auth/              # Authentication module
 ├── user/              # User management module
 ├── role/              # Role management module
-├── prisma/            # Database service
+├── database/          # Entities, migrations, and seeders
 ├── app.module.ts      # Main application module
 └── main.ts            # Application entry point
 ```
@@ -129,9 +123,9 @@ src/
 ## Documentation
 
 - [Authentication Documentation](./AUTHENTICATION.md) - Detailed authentication system docs
-- [Prisma Schema](./prisma/schema.prisma) - Database schema definition
+- [TypeORM Entities](./src/database/entities) - Database schema definitions
 - [NestJS Documentation](https://docs.nestjs.com) - Official NestJS docs
-- [Prisma Documentation](https://www.prisma.io/docs) - Official Prisma docs
+- [TypeORM Documentation](https://typeorm.io/) - Official TypeORM docs
 
 ## Next Steps
 
