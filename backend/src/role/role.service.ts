@@ -1,23 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Role } from '../database/entities';
 
 @Injectable()
 export class RoleService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@InjectRepository(Role) private readonly roles: Repository<Role>) {}
 
   async findBySlug(slug: string) {
-    return this.prisma.role.findUnique({
-      where: { slug },
-    });
+    return this.roles.findOneBy({ slug });
   }
 
   async findById(id: number) {
-    return this.prisma.role.findUnique({
-      where: { id },
-    });
+    return this.roles.findOneBy({ id });
   }
 
   async findAll() {
-    return this.prisma.role.findMany();
+    return this.roles.find();
   }
 }

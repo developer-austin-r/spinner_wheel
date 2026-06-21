@@ -17,7 +17,7 @@ import { Button } from '../../components/ui/Button';
 
 
 export const SpinnerManagement: React.FC = () => {
-  const { spinners, updateSpinner, setWinner, resetWinner, fetchSpinners, addSpinner, setSelectedWinnerColor } = useSpinners();
+  const { spinners, updateSpinner, resetWinner, fetchSpinners, addSpinner, setSelectedWinnerColor } = useSpinners();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [isModalOpen, setIsModalOpen] = React.useState(false);

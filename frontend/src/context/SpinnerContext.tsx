@@ -163,6 +163,7 @@ export const SpinnerProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addPurchase = (purchase: Omit<Purchase, 'id' | 'timestamp'>) => {
     // Local fallback if needed, but we mostly use backend now
+    void purchase;
   };
 
   const addBulkPurchase = async (selections: BulkSelection[]) => {

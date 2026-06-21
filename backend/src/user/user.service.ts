@@ -1,22 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../database/entities';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-      include: { role: true },
-    });
+    return this.users.findOne({ where: { email }, relations: { role: true }, withDeleted: true });
   }
 
   async findById(id: number) {
-    return this.prisma.user.findUnique({
-      where: { id },
-      include: { role: true },
-    });
+    return this.users.findOne({ where: { id }, relations: { role: true }, withDeleted: true });
   }
 
   async create(data: {
@@ -26,22 +22,24 @@ export class UserService {
     phoneNumber?: string;
     roleId: number;
   }) {
-    return this.prisma.user.create({
-      data: {
+    const saved = await this.users.save(
+      this.users.create({
         name: data.name,
         email: data.email,
         password: data.password,
         phoneNumber: data.phoneNumber,
         roleId: data.roleId,
-      },
-      include: { role: true },
-    });
+      }),
+    );
+    const user = await this.findById(saved.id);
+    if (!user) {
+      throw new Error('Created user could not be loaded');
+    }
+    return user;
   }
 
   async softDelete(id: number) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    await this.users.softDelete(id);
+    return this.findById(id);
   }
 }

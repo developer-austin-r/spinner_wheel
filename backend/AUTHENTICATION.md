@@ -4,13 +4,13 @@ This documentation covers the complete authentication system implementation for 
 
 ## Overview
 
-A production-ready authentication system built with NestJS, featuring JWT-based authentication, bcrypt password hashing, and role-based access control using Prisma ORM with PostgreSQL.
+A production-ready authentication system built with NestJS, featuring JWT-based authentication, bcrypt password hashing, and role-based access control using TypeORM with PostgreSQL.
 
 ## Technology Stack
 
 - **Framework**: NestJS 11
 - **Authentication**: Passport.js with JWT & Local strategies
-- **Database**: PostgreSQL with Prisma ORM
+- **Database**: PostgreSQL with TypeORM
 - **Password Hashing**: bcrypt
 - **Validation**: class-validator & class-transformer
 - **Environment**: @nestjs/config
@@ -40,14 +40,12 @@ backend/
 │   ├── role/
 │   │   ├── role.service.ts
 │   │   └── role.module.ts
-│   ├── prisma/
-│   │   └── prisma.service.ts
+│   ├── database/
+│   │   ├── entities/
+│   │   ├── migrations/
+│   │   └── seeds/
 │   ├── app.module.ts
 │   └── main.ts
-├── prisma/
-│   ├── schema.prisma
-│   ├── seed.ts
-│   └── migrations/
 ├── .env
 └── package.json
 ```
@@ -110,14 +108,11 @@ npm install --legacy-peer-deps
 
 ### 2. Setup Database
 ```bash
-# Generate Prisma client
-npm run prisma:generate
-
 # Run migrations
-npm run prisma:migrate
+npm run migration:run
 
-# Seed default roles
-npm run prisma:seed
+# Seed all default data
+npm run seed
 ```
 
 ### 3. Start Development Server
@@ -315,10 +310,10 @@ npm run start:prod
 npm run test
 
 # Database operations
-npm run prisma:migrate       # Create new migration
-npm run prisma:seed         # Run seed script
-npm run prisma:generate     # Generate Prisma client
-npm run prisma:migrate:prod # Deploy migrations to production
+npm run migration:generate -- src/database/migrations/Name # Generate migration
+npm run migration:run       # Run migrations
+npm run seed                # Run all seeders
+npm run migration:run:prod  # Run compiled production migrations
 
 # Code quality
 npm run lint    # Lint and fix code
@@ -381,10 +376,10 @@ PORT=3001
 ### JWT Token Expired
 Get a new token by logging in again. Adjust JWT_EXPIRES_IN in `.env` if needed.
 
-### Prisma Client Not Generated
+### Database Connection or Metadata Errors
 Run:
 ```bash
-npm run prisma:generate
+npm run migration:run
 ```
 
 ## Next Steps
@@ -403,4 +398,4 @@ npm run prisma:generate
 ---
 
 For more information about NestJS, visit: https://docs.nestjs.com
-For Prisma documentation, visit: https://www.prisma.io/docs
+For TypeORM documentation, visit: https://typeorm.io/

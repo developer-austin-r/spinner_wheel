@@ -1,12 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { SpinnerColor } from '../database/entities';
 
 @Controller('spinner-colors')
 export class SpinnerColorController {
-  constructor(private prisma: PrismaService) {}
+  constructor(@InjectRepository(SpinnerColor) private readonly colors: Repository<SpinnerColor>) {}
 
   @Get()
   async findAll() {
-    return this.prisma.spinnerColor.findMany();
+    return this.colors.find();
   }
 }
